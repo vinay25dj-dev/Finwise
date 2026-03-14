@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Life Choices Simulator{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <h2>Financial Life Simulator</h2>
+    <p>Navigate unexpected life events and see how your financial choices impact your future.</p>
+</section>
+
+<div class="game-container">
+    <div id="gameStartSect" class="glass-card">
+        <h3 style="margin-bottom: 20px;">Ready to play?</h3>
+        <p style="margin-bottom: 30px; color: var(--text-secondary);">You will start with a hypothetical baseline financial profile. Let's see how long you can sustain a growing wealth!</p>
+        <button id="startGameBtn" class="submit-btn" style="width: auto; padding: 15px 40px;">Start Scenario</button>
+    </div>
+
+    <div id="gameActiveSect" style="display: none;">
+        <div class="stats-bar" style="position: relative;">
+            <div class="stat-item">
+                <h3>Rank</h3>
+                <p id="statTitle" style="color: var(--accent-primary); font-size: 1.2rem;">Novice</p>
+            </div>
+            <div class="stat-item">
+                <h3>Score</h3>
+                <p id="statScore">0</p>
+            </div>
+            <div class="stat-item">
+                <h3>Turn</h3>
+                <p id="statTurn">1</p>
+            </div>
+            <div class="stat-item">
+                <h3>Age</h3>
+                <p id="statAge">22</p>
+            </div>
+            <div class="stat-item">
+                <h3>Stage</h3>
+                <p id="statStage" style="color: var(--accent-secondary);">-</p>
+            </div>
+            <div class="stat-item">
+                <h3>Cash Balance</h3>
+                <p id="statBalance">$0</p>
+            </div>
+            <div class="stat-item">
+                <h3>Monthly Income</h3>
+                <p id="statIncome">$0</p>
+            </div>
+            <div class="stat-item">
+                <h3>Monthly Exp.</h3>
+                <p id="statExpenses">$0</p>
+            </div>
+            <div class="stat-item">
+                <h3>Net Cash Flow</h3>
+                <p id="statNet">$0</p>
+            </div>
+        </div>
+
+        <div id="feedbackMessage" style="margin-bottom: 20px; color: var(--accent-secondary); font-weight: bold; min-height: 24px;"></div>
+
+        <div class="scenario-card">
+            <h2 id="scenarioTitle">Loading...</h2>
+            <p id="scenarioDesc" style="margin-bottom: 30px; font-size: 1.2rem;"></p>
+            
+            <div class="choices-container" id="choicesContainer">
+                <!-- Choices injected by JS -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

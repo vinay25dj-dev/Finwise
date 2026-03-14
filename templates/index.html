@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Financial Planner{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <h2>Design Your Financial Future</h2>
+    <p>Enter your details below to receive a personalized, actionable financial strategy.</p>
+</section>
+
+<div class="glass-card" id="plannerWizard">
+    <div class="progress-steps">
+        <div class="step-indicator active">1. Basics</div>
+        <div class="step-indicator">2. Assets & Debts</div>
+        <div class="step-indicator">3. Goals</div>
+    </div>
+    
+    <div class="progress-bar-thin">
+        <div class="progress-fill" id="wizardProgress"></div>
+    </div>
+    
+    <form id="plannerForm">
+        <!-- Step 1 -->
+        <div class="wizard-step active-step" id="step1">
+            <h3 class="step-title">Income & Expenses</h3>
+            <p class="step-desc">Let's start with your monthly cash flow.</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="monthly_income">Monthly Income ($)</label>
+                    <div class="input-with-icon">
+                        <span class="icon">$</span>
+                        <input type="number" id="monthly_income" required min="1" placeholder="5000">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="monthly_expenses">Monthly Expenses ($)</label>
+                    <div class="input-with-icon">
+                        <span class="icon">$</span>
+                        <input type="number" id="monthly_expenses" required min="0" placeholder="3000">
+                    </div>
+                </div>
+            </div>
+            <div class="step-actions">
+                <button type="button" class="btn-secondary" disabled>Back</button>
+                <button type="button" class="btn-primary next-step">Continue</button>
+            </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="wizard-step" id="step2">
+            <h3 class="step-title">Assets & Debts</h3>
+            <p class="step-desc">What is your current financial standing?</p>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="current_savings">Current Savings ($)</label>
+                    <div class="input-with-icon">
+                        <span class="icon">$</span>
+                        <input type="number" id="current_savings" required min="0" placeholder="10000">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="loan_amount">Outstanding Debt ($) <span class="optional">- Optional</span></label>
+                    <div class="input-with-icon">
+                        <span class="icon">$</span>
+                        <input type="number" id="loan_amount" min="0" placeholder="0" value="0">
+                    </div>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label for="credit_score">Credit Score <span class="optional">- Optional</span></label>
+                    <input type="number" id="credit_score" min="300" max="850" placeholder="e.g. 750">
+                </div>
+            </div>
+            <div class="step-actions">
+                <button type="button" class="btn-secondary prev-step">Back</button>
+                <button type="button" class="btn-primary next-step">Continue</button>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="wizard-step" id="step3">
+            <h3 class="step-title">Your Aspirations</h3>
+            <p class="step-desc">What are you saving for?</p>
+            <div class="form-group">
+                <label for="financial_goals">Primary Financial Goal</label>
+                <input type="text" id="financial_goals" placeholder="e.g. Buy a house in 5 years, retire at 50, etc.">
+            </div>
+            <div class="step-actions">
+                <button type="button" class="btn-secondary prev-step">Back</button>
+                <button type="submit" class="submit-btn" id="generatePlanBtn">Generate AI Master Plan ✨</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="results-dashboard glass-card" id="resultsContainer">
+    <div class="dashboard-header">
+        <div>
+            <h3 class="dashboard-title">Your Action Plan</h3>
+            <p id="profileSummary" class="text-secondary"></p>
+        </div>
+        <div class="health-score-widget">
+            <div class="score-ring" id="planScore">0</div>
+            <span>Health Score</span>
+        </div>
+    </div>
+    
+    <div id="badgesContainer" class="badges-row"></div>
+
+    <div class="dashboard-grid">
+        <div class="dashboard-card chart-card">
+            <h4>Cash Flow Breakdown</h4>
+            <div class="chart-container">
+                <canvas id="cashFlowChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="dashboard-card emergency-card">
+            <h4>Emergency Safety Net</h4>
+            <p id="emergencyAdvice"></p>
+        </div>
+    </div>
+
+    <h4 class="section-heading">Strategic Recommendations</h4>
+    <div id="strategiesList" class="strategies-grid"></div>
+</div>
+{% endblock %}

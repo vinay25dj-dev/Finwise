@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finwise | {% block title %}{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="glass-header">
+            <h1 class="logo">Finwise <span>✨</span></h1>
+            <nav>
+                <a href="/">Planner</a>
+                <a href="/game" class="btn-glow">Play Game</a>
+            </nav>
+        </header>
+
+        <main class="content-area">
+            {% block content %}{% endblock %}
+        </main>
+        
+        <footer>
+            <p>&copy; 2026 Finwise - Master Your Finances</p>
+        </footer>
+    </div>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
