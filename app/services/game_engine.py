@@ -1,6 +1,5 @@
 import random
 import uuid
-from typing import List
 from app.schemas.game import GameScenario, GameChoice, GameState
 
 SCENARIO_TEMPLATES = [
@@ -17,8 +16,8 @@ SCENARIO_TEMPLATES = [
         "events": ["student debt milestone", "lease renewal", "low-paying internship", "skill bootcamp"],
         "base_cost": (500, 3000),
         "choices_templates": [
-            {"type": "pay", "text": "Pay aggressively from savings", "impact": "Drains cash now but saves on interest.", "exp": -50},
-            {"type": "finance", "text": "Take on reasonable debt", "impact": "Leaves cash reserves but adds a monthly payment.", "exp": 150},
+            {"type": "pay", "text": "Pay aggressively from savings", "impact": "Drains cash now but saves on interest.", "cost_mult": 1.0, "exp": -50},
+            {"type": "finance", "text": "Take on reasonable debt", "impact": "Leaves cash reserves but adds a monthly payment.", "cost_mult": 0.1, "exp": 150},
             {"type": "ignore", "text": "Defer or delay", "impact": "Temporary relief but costs more long-term.", "cost_mult": 0, "exp": 0, "risk_mult": 1.5}
         ]
     },
@@ -39,7 +38,7 @@ SCENARIO_TEMPLATES = [
             {"type": "skip", "text": "Stay home and save", "impact": "FOMO, but your wallet is safe.", "cost_mult": 0, "exp": 0}
         ]
     },
-    
+
     # ---- 30s: Growth & Establishment ----
     {
         "category": "Home & Family",
@@ -104,7 +103,7 @@ SCENARIO_TEMPLATES = [
         "events": ["stock market dip", "real estate deal", "kids tuition bill"],
         "base_cost": (5000, 25000),
         "choices_templates": [
-            {"type": "agressive", "text": "Buy the dip / Pay the tuition", "impact": "Huge upfront cost but secures the future.", "cost_mult": 1.0, "exp": 0},
+            {"type": "aggressive", "text": "Buy the dip / Pay the tuition", "impact": "Huge upfront cost but secures the future.", "cost_mult": 1.0, "exp": 0},
             {"type": "conservative", "text": "Pull back to cash / Take student loans", "impact": "Saves cash, but loses potential growth.", "cost_mult": 0, "exp": 300}
         ]
     },
@@ -128,41 +127,33 @@ SCENARIO_TEMPLATES = [
     }
 ]
 
+
 def get_scenario_for_age(age: int) -> GameScenario:
-    import random
-    
-    # Filter templates by age bracket
     valid_templates = [t for t in SCENARIO_TEMPLATES if t["min_age"] <= age <= t["max_age"]]
     if not valid_templates:
-        # Fallback if somehow age is out of bounds
-        valid_templates = SCENARIO_TEMPLATES 
-        
+        valid_templates = SCENARIO_TEMPLATES
+
     template = random.choice(valid_templates)
-    
-    title = random.choice(template["title_templates"]) # type: ignore
-    event = random.choice(template["events"]) # type: ignore
-    description = random.choice(template["desc_templates"]).format(event=event) # type: ignore
-    
-    base_cost_tuple = template["base_cost"]
-    base_cost = random.randint(base_cost_tuple[0], base_cost_tuple[1]) # type: ignore
-    
-    choices = []
-    
-    # Shuffle or select choices
+
+    title = random.choice(template["title_templates"])
+    event = random.choice(template["events"])
+    description = random.choice(template["desc_templates"]).format(event=event)
+
+    base_cost_range = template["base_cost"]
+    base_cost = random.randint(base_cost_range[0], base_cost_range[1])
+
     choices_list = template["choices_templates"]
-    chosen_templates = random.sample(choices_list, min(3, len(choices_list))) # type: ignore
-    
+    chosen_templates = random.sample(choices_list, min(3, len(choices_list)))
+
+    choices = []
     for c in chosen_templates:
         actual_cost = -int(base_cost * c.get("cost_mult", 1.0))
-        
-        # Calculate dynamic expense change
+
         exp_change = c.get("exp", 0)
-        if isinstance(exp_change, float) and exp_change > 0 and exp_change < 1:
-            # It's an interest rate percentage, calculate monthly payment roughly
+        if isinstance(exp_change, float) and 0 < exp_change < 1:
             exp_change = int(abs(base_cost) * exp_change)
-            actual_cost = 0 # No upfront cost if put on credit/financed usually in these templates unless specified
-            
-        # Calculate income boost
+            actual_cost = 0
+
         inc_boost = 0
         if "inc_boost" in c:
             inc_boost = random.randint(c["inc_boost"][0], c["inc_boost"][1])
@@ -175,45 +166,49 @@ def get_scenario_for_age(age: int) -> GameScenario:
             income_change=inc_boost,
             expense_change=exp_change
         ))
-        
+
     return GameScenario(
         id=str(uuid.uuid4()),
-        title=f"[{template['category']}] {title}", # type: ignore
-        description=description, # type: ignore
+        title=f"[{template['category']}] {title}",
+        description=description,
         choices=choices
     )
 
+
 def process_choice(current_state: GameState, choice: GameChoice) -> GameState:
-    # Update state based on the chosen consequences
     new_state = current_state.model_copy()
-    
-    # Process cash flow (income - expenses) for this turn
+
+    # Apply monthly surplus
     surplus = new_state.monthly_income - new_state.monthly_expenses
     new_state.balance += surplus
-    
-    # Apply choice immediate costs/gains
+
+    # Apply one-time cost/gain from choice
     new_state.balance += choice.cost
-    
-    # Apply long term changes
+
+    # Apply ongoing changes
     new_state.monthly_income += choice.income_change
     new_state.monthly_expenses += choice.expense_change
-    
+
     new_state.turn_number += 1
     new_state.age += 1
-    
-    # Update Life Stage
-    if new_state.age < 30: new_state.life_stage = "Foundation (20s)"
-    elif new_state.age < 40: new_state.life_stage = "Growth (30s)"
-    elif new_state.age < 50: new_state.life_stage = "Mid-Life (40s)"
-    elif new_state.age < 60: new_state.life_stage = "Pre-Retirement (50s)"
-    else: new_state.life_stage = "Legacy (60s+)"
-    
-    # Calculate score & title
+
+    # Update life stage
+    if new_state.age < 30:
+        new_state.life_stage = "Foundation (20s)"
+    elif new_state.age < 40:
+        new_state.life_stage = "Growth (30s)"
+    elif new_state.age < 50:
+        new_state.life_stage = "Mid-Life (40s)"
+    elif new_state.age < 60:
+        new_state.life_stage = "Pre-Retirement (50s)"
+    else:
+        new_state.life_stage = "Legacy (60s+)"
+
+    # Update score and title
     net_flow = new_state.monthly_income - new_state.monthly_expenses
     potential_health = new_state.balance + (net_flow * 12)
-    
-    new_state.score = int(max(0, min(10000, potential_health)) / 100) # Simple 0-100 logic
-    
+    new_state.score = int(max(0, min(10000, potential_health)) / 100)
+
     if new_state.balance < 0 and net_flow < 0:
         new_state.title = "Bankrupt Dangers"
     elif new_state.balance < 1000:
@@ -224,5 +219,5 @@ def process_choice(current_state: GameState, choice: GameChoice) -> GameState:
         new_state.title = "Comfortable"
     else:
         new_state.title = "Wealth Building"
-    
+
     return new_state

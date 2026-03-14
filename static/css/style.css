@@ -1,11 +1,15 @@
 :root {
-    --bg-color: #0b0f19; /* Deep sleek dark */
+    --bg-color: #0b0f19;
+    /* Deep sleek dark */
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
-    --accent-primary: #6366f1; /* Indigo */
-    --accent-secondary: #38bdf8; /* Light blue */
+    --accent-primary: #6366f1;
+    /* Indigo */
+    --accent-secondary: #38bdf8;
+    /* Light blue */
     --accent-success: #10b981;
-    --card-bg: rgba(15, 23, 42, 0.6); /* Slate glass */
+    --card-bg: rgba(15, 23, 42, 0.6);
+    /* Slate glass */
     --card-border: rgba(255, 255, 255, 0.05);
     --glow-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
     --font-main: 'Outfit', sans-serif;
@@ -19,7 +23,7 @@
 
 body {
     background: #0b0f19;
-    background-image: 
+    background-image:
         radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.1) 0px, transparent 50%);
     color: var(--text-primary);
@@ -31,9 +35,17 @@ body {
 }
 
 @keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 .app-container {
@@ -147,7 +159,7 @@ nav a:hover {
 .progress-bar-thin {
     width: 100%;
     height: 4px;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 2px;
     margin-bottom: 40px;
     overflow: hidden;
@@ -170,8 +182,15 @@ nav a:hover {
 }
 
 @keyframes fadeInSlide {
-    from { opacity: 0; transform: translateX(20px); }
-    to { opacity: 1; transform: translateX(0); }
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 .step-title {
@@ -228,7 +247,7 @@ nav a:hover {
     width: 100%;
     padding: 16px;
     background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(255,255,255,0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     color: white;
     font-family: var(--font-main);
@@ -253,7 +272,7 @@ nav a:hover {
 
 .btn-secondary {
     padding: 12px 24px;
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background: transparent;
     color: var(--text-primary);
     border-radius: 10px;
@@ -264,7 +283,7 @@ nav a:hover {
 }
 
 .btn-secondary:hover:not(:disabled) {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .btn-secondary:disabled {
@@ -291,7 +310,7 @@ nav a:hover {
 
 .progress-container {
     width: 100%;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     height: 10px;
     margin-bottom: 25px;
@@ -395,8 +414,8 @@ nav a:hover {
 }
 
 .dashboard-card {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
     padding: 24px;
 }
@@ -429,8 +448,8 @@ nav a:hover {
 }
 
 .strategy-item {
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     padding: 25px;
     border-radius: 16px;
     border-left: 4px solid var(--accent-primary);
@@ -439,7 +458,7 @@ nav a:hover {
 
 .strategy-item:hover {
     transform: translateX(5px);
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .strategy-item h4 {
@@ -483,7 +502,7 @@ nav a:hover {
 }
 
 .scenario-card {
-    background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
     padding: 40px;
     border-radius: 20px;
     margin-bottom: 30px;
@@ -502,8 +521,8 @@ nav a:hover {
 }
 
 .choice-btn {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
     padding: 20px;
     border-radius: 15px;
@@ -529,13 +548,27 @@ nav a:hover {
 
 /* Animations */
 @keyframes fadeInDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Gamification Styles */
@@ -573,7 +606,7 @@ nav a:hover {
     font-size: 2rem;
     font-weight: 700;
     color: white;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     border: 4px solid var(--accent-secondary);
     box-shadow: 0 0 20px rgba(0, 210, 255, 0.3);
 }
@@ -598,8 +631,15 @@ nav a:hover {
 }
 
 @keyframes floatUpFade {
-    0% { transform: translateY(0); opacity: 1; }
-    100% { transform: translateY(-50px); opacity: 0; }
+    0% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
 }
 
 footer {

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
 
+
 class GameState(BaseModel):
     player_name: str = Field("Guest", description="Name of the player")
     balance: float = Field(..., description="Current cash balance in the game")
@@ -9,9 +10,10 @@ class GameState(BaseModel):
     credit_score: Optional[int] = Field(None, description="Game credit score")
     turn_number: int = Field(1, description="Current turn number")
     score: int = Field(0, description="Financial score")
-    title: str = Field("Novice", description="Player Title based on wealth")
+    title: str = Field("Novice", description="Player title based on wealth")
     age: int = Field(22, description="The player's current chronological age in game")
     life_stage: str = Field("Foundation (20s)", description="The player's current life stage category")
+
 
 class GameChoice(BaseModel):
     id: str = Field(..., description="Unique ID for the choice")
@@ -21,11 +23,13 @@ class GameChoice(BaseModel):
     income_change: Optional[float] = Field(0.0, description="Change to monthly income")
     expense_change: Optional[float] = Field(0.0, description="Change to monthly expenses")
 
+
 class GameScenario(BaseModel):
     id: str = Field(..., description="Unique ID for the scenario")
     title: str = Field(..., description="Title of the scenario")
     description: str = Field(..., description="Detailed description of the life event")
     choices: List[GameChoice] = Field(..., description="Available choices for the player")
+
 
 class TurnResponse(BaseModel):
     state: GameState = Field(..., description="The player's new game state")

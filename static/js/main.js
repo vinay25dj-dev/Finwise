@@ -1,3 +1,5 @@
+# static / js / main
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // ==== Planner Interaction ====
