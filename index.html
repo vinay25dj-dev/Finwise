@@ -1,0 +1,2401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Finwise — Financial Life Simulator</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Instrument+Sans:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --surface2: #1a1a26;
+            --border: rgba(255, 255, 255, 0.08);
+            --border2: rgba(255, 255, 255, 0.14);
+            --text: #f0eee8;
+            --muted: #8884a0;
+            --accent: #c8f565;
+            --accent2: #7c6af5;
+            --accent3: #f5a623;
+            --accent4: #f56565;
+            --green: #4ade80;
+            --red: #f87171;
+            --gold: #fbbf24;
+            --font-head: 'Syne', sans-serif;
+            --font-body: 'Instrument Sans', sans-serif;
+            --r: 14px;
+            --r2: 22px;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── NOISE OVERLAY ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.4;
+        }
+
+        /* ── GLOW ORBS ── */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: rgba(124, 106, 245, 0.12);
+            top: -100px;
+            right: -100px;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: rgba(200, 245, 101, 0.07);
+            bottom: -50px;
+            left: -80px;
+        }
+
+        /* ── LAYOUT ── */
+        #app {
+            position: relative;
+            z-index: 1;
+        }
+
+        .screen {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .center-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 2rem 1rem;
+        }
+
+        /* ── TYPOGRAPHY ── */
+        h1 {
+            font-family: var(--font-head);
+            font-size: clamp(2.4rem, 6vw, 4rem);
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-family: var(--font-head);
+            font-size: clamp(1.4rem, 3vw, 2rem);
+            font-weight: 700;
+        }
+
+        h3 {
+            font-family: var(--font-head);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        /* ── CARDS ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            padding: 2rem;
+        }
+
+        .card-sm {
+            padding: 1.25rem 1.5rem;
+            border-radius: var(--r);
+        }
+
+        /* ── BUTTONS ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 100px;
+            font-family: var(--font-body);
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #0a0a0f;
+        }
+
+        .btn-primary:hover {
+            background: #d4f97e;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px rgba(200, 245, 101, 0.25);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border2);
+        }
+
+        .btn-secondary:hover {
+            background: var(--surface2);
+            border-color: var(--border2);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--muted);
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+
+        .btn-ghost:hover {
+            color: var(--text);
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* ── NAV ── */
+        #nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 100;
+        }
+
+        .nav-logo {
+            font-family: var(--font-head);
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            background: var(--surface);
+            border-radius: 100px;
+            padding: 4px;
+        }
+
+        .nav-tab {
+            padding: 7px 18px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--muted);
+            border: none;
+            background: none;
+        }
+
+        .nav-tab.active {
+            background: var(--surface2);
+            color: var(--text);
+        }
+
+        .xp-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .xp-star {
+            color: var(--gold);
+            font-size: 14px;
+        }
+
+        /* ═══════════════════════════════
+   SCREEN: WELCOME / AGE GATE
+═══════════════════════════════ */
+        #screen-welcome .hero-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(200, 245, 101, 0.1);
+            border: 1px solid rgba(200, 245, 101, 0.25);
+            border-radius: 100px;
+            padding: 6px 16px;
+            margin-bottom: 1.5rem;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        #screen-welcome h1 span {
+            color: var(--accent);
+        }
+
+        #screen-welcome .hero-sub {
+            color: var(--muted);
+            font-size: 1.1rem;
+            max-width: 520px;
+            text-align: center;
+            margin: 1rem 0 2.5rem;
+        }
+
+        .age-input-wrap {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .age-input-wrap input {
+            width: 100%;
+            padding: 18px 24px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: var(--font-head);
+            text-align: center;
+            background: var(--surface);
+            border: 2px solid var(--border2);
+            border-radius: var(--r2);
+            color: var(--text);
+            transition: border-color 0.2s;
+            outline: none;
+            appearance: textfield;
+        }
+
+        .age-input-wrap input:focus {
+            border-color: var(--accent);
+        }
+
+        .age-input-wrap input::placeholder {
+            color: var(--muted);
+            font-weight: 400;
+            font-size: 1rem;
+        }
+
+        .stage-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 1.5rem 0;
+        }
+
+        .stage-pill {
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            color: var(--muted);
+            background: transparent;
+            transition: all 0.2s;
+            cursor: default;
+        }
+
+        .stage-pill.active {
+            background: rgba(124, 106, 245, 0.15);
+            border-color: var(--accent2);
+            color: var(--accent2);
+        }
+
+        .feature-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 560px;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .feature-icon {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-card p {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        /* ═══════════════════════════════
+   SCREEN: QUIZ
+═══════════════════════════════ */
+        #screen-quiz {
+            padding-bottom: 3rem;
+        }
+
+        .quiz-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stage-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(124, 106, 245, 0.12);
+            border: 1px solid rgba(124, 106, 245, 0.25);
+            border-radius: 100px;
+            padding: 5px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent2);
+        }
+
+        .quiz-meta {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .streak-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gold);
+        }
+
+        .score-live {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--green);
+        }
+
+        /* Progress bar */
+        .progress-track {
+            height: 6px;
+            background: var(--surface2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 0 2rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent2), var(--accent));
+            border-radius: 3px;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .quiz-body {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Question card */
+        .q-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .q-card::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 106, 245, 0.12), transparent 70%);
+            pointer-events: none;
+        }
+
+        .q-num-label {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 0.75rem;
+        }
+
+        .q-text {
+            font-family: var(--font-head);
+            font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 2rem;
+        }
+
+        /* Choices */
+        .choices-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .choice-btn {
+            width: 100%;
+            text-align: left;
+            padding: 16px 20px;
+            background: var(--surface2);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r);
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .choice-btn:hover:not(:disabled) {
+            border-color: var(--accent2);
+            background: rgba(124, 106, 245, 0.08);
+            transform: translateX(3px);
+        }
+
+        .choice-letter {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+            transition: all 0.2s;
+        }
+
+        .choice-btn:hover:not(:disabled) .choice-letter {
+            background: var(--accent2);
+            color: #fff;
+            border-color: var(--accent2);
+        }
+
+        .choice-btn.correct {
+            border-color: var(--green);
+            background: rgba(74, 222, 128, 0.08);
+        }
+
+        .choice-btn.correct .choice-letter {
+            background: var(--green);
+            color: #0a0a0f;
+            border-color: var(--green);
+        }
+
+        .choice-btn.wrong {
+            border-color: var(--red);
+            background: rgba(248, 113, 113, 0.08);
+        }
+
+        .choice-btn.wrong .choice-letter {
+            background: var(--red);
+            color: #fff;
+            border-color: var(--red);
+        }
+
+        .choice-btn.reveal-correct {
+            border-color: var(--green);
+            background: rgba(74, 222, 128, 0.05);
+        }
+
+        .choice-btn.reveal-correct .choice-letter {
+            background: var(--green);
+            color: #0a0a0f;
+            border-color: var(--green);
+        }
+
+        .choice-btn:disabled {
+            cursor: default;
+        }
+
+        /* ── FLASHCARD ── */
+        .flashcard-wrap {
+            margin-top: 1.5rem;
+            perspective: 1000px;
+        }
+
+        .flashcard {
+            border-radius: var(--r2);
+            overflow: hidden;
+            animation: cardSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes cardSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.97);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .flashcard.correct-card {
+            background: linear-gradient(135deg, rgba(74, 222, 128, 0.12), rgba(74, 222, 128, 0.04));
+            border: 1px solid rgba(74, 222, 128, 0.25);
+        }
+
+        .flashcard.wrong-card {
+            background: linear-gradient(135deg, rgba(248, 113, 113, 0.12), rgba(248, 113, 113, 0.04));
+            border: 1px solid rgba(248, 113, 113, 0.2);
+        }
+
+        .fc-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .fc-verdict-icon {
+            font-size: 1.6rem;
+        }
+
+        .fc-verdict-text {
+            font-family: var(--font-head);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .fc-verdict-text.correct {
+            color: var(--green);
+        }
+
+        .fc-verdict-text.wrong {
+            color: var(--red);
+        }
+
+        .fc-points {
+            margin-left: auto;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .fc-body {
+            padding: 1.5rem;
+        }
+
+        .fc-section {
+            margin-bottom: 1.25rem;
+        }
+
+        .fc-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .fc-section-text {
+            font-size: 14px;
+            line-height: 1.65;
+            color: var(--text);
+        }
+
+        .fc-tip-box {
+            background: rgba(200, 245, 101, 0.07);
+            border: 1px solid rgba(200, 245, 101, 0.15);
+            border-radius: var(--r);
+            padding: 1rem 1.25rem;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+        }
+
+        .fc-tip-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .fc-tip-text {
+            font-size: 13px;
+            color: var(--accent);
+            line-height: 1.6;
+        }
+
+        /* Real-world connection */
+        .fc-realworld {
+            background: rgba(124, 106, 245, 0.08);
+            border: 1px solid rgba(124, 106, 245, 0.18);
+            border-radius: var(--r);
+            padding: 1rem 1.25rem;
+            margin-top: 1rem;
+            display: flex;
+            gap: 10px;
+        }
+
+        .fc-realworld-text {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .fc-realworld-text strong {
+            color: var(--accent2);
+        }
+
+        .quiz-next-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+        }
+
+        .combo-indicator {
+            font-size: 13px;
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        /* ═══════════════════════════════
+   SCREEN: RESULTS
+═══════════════════════════════ */
+        .results-wrap {
+            max-width: 680px;
+            width: 100%;
+        }
+
+        .score-ring-wrap {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .score-ring-wrap svg {
+            transform: rotate(-90deg);
+        }
+
+        .score-ring-bg {
+            fill: none;
+            stroke: var(--surface2);
+            stroke-width: 12;
+        }
+
+        .score-ring-fill {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .score-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-number {
+            font-family: var(--font-head);
+            font-size: 2.4rem;
+            font-weight: 800;
+        }
+
+        .score-denom {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .badges-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+
+        .badge-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 700;
+            animation: badgePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        @keyframes badgePop {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .badge-gold {
+            background: rgba(251, 191, 36, 0.15);
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            color: var(--gold);
+        }
+
+        .badge-purple {
+            background: rgba(124, 106, 245, 0.15);
+            border: 1px solid rgba(124, 106, 245, 0.4);
+            color: var(--accent2);
+        }
+
+        .badge-green {
+            background: rgba(74, 222, 128, 0.12);
+            border: 1px solid rgba(74, 222, 128, 0.35);
+            color: var(--green);
+        }
+
+        .q-review-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 1.5rem;
+        }
+
+        .q-review-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .q-review-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .q-review-text {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .q-review-text strong {
+            color: var(--text);
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        /* ═══════════════════════════════
+   SCREEN: PLANNER
+═══════════════════════════════ */
+        .planner-layout {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            width: 100%;
+        }
+
+        .planner-hero {
+            margin-bottom: 2rem;
+        }
+
+        .planner-hero h2 {
+            margin-bottom: 0.4rem;
+        }
+
+        .planner-hero p {
+            color: var(--muted);
+        }
+
+        /* Planner form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            letter-spacing: 0.05em;
+        }
+
+        .form-input {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--r);
+            padding: 12px 16px;
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+            appearance: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent2);
+        }
+
+        .form-input::placeholder {
+            color: var(--muted);
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        textarea.form-input {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Planner results */
+        .plan-results {
+            margin-top: 2.5rem;
+        }
+
+        .health-meter {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .health-score-big {
+            font-family: var(--font-head);
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .health-bar-track {
+            height: 10px;
+            background: var(--surface2);
+            border-radius: 5px;
+            margin: 1rem auto;
+            max-width: 400px;
+            overflow: hidden;
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            background: linear-gradient(90deg, var(--red), var(--gold), var(--green));
+            transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 600px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 1.25rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: var(--font-head);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .stat-card.positive .stat-value {
+            color: var(--green);
+        }
+
+        .stat-card.negative .stat-value {
+            color: var(--red);
+        }
+
+        .stat-card.neutral .stat-value {
+            color: var(--accent3);
+        }
+
+        /* Strategy cards */
+        .strategy-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .strategy-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .strategy-card:hover {
+            border-color: var(--border2);
+        }
+
+        .strategy-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 1.25rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .strategy-card.expanded .strategy-header {
+            border-bottom-color: var(--border);
+        }
+
+        .strategy-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .strategy-icon.green {
+            background: rgba(74, 222, 128, 0.12);
+        }
+
+        .strategy-icon.purple {
+            background: rgba(124, 106, 245, 0.12);
+        }
+
+        .strategy-icon.gold {
+            background: rgba(251, 191, 36, 0.1);
+        }
+
+        .strategy-icon.red {
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        .strategy-icon.blue {
+            background: rgba(96, 165, 250, 0.1);
+        }
+
+        .strategy-title {
+            font-family: var(--font-head);
+            font-size: 1rem;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .strategy-priority {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 100px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .priority-high {
+            background: rgba(248, 113, 113, 0.12);
+            color: var(--red);
+            border: 1px solid rgba(248, 113, 113, 0.25);
+        }
+
+        .priority-medium {
+            background: rgba(251, 191, 36, 0.1);
+            color: var(--gold);
+            border: 1px solid rgba(251, 191, 36, 0.25);
+        }
+
+        .priority-low {
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--green);
+            border: 1px solid rgba(74, 222, 128, 0.25);
+        }
+
+        .strategy-chevron {
+            color: var(--muted);
+            transition: transform 0.3s;
+            font-size: 14px;
+        }
+
+        .strategy-card.expanded .strategy-chevron {
+            transform: rotate(180deg);
+        }
+
+        .strategy-body {
+            padding: 1.5rem;
+            display: none;
+        }
+
+        .strategy-card.expanded .strategy-body {
+            display: block;
+        }
+
+        .strategy-desc {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.7;
+            margin-bottom: 1.25rem;
+        }
+
+        .action-items {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .action-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: var(--surface2);
+            border-radius: var(--r);
+            padding: 10px 14px;
+        }
+
+        .action-num {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(124, 106, 245, 0.2);
+            border: 1px solid rgba(124, 106, 245, 0.35);
+            color: var(--accent2);
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .action-text {
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        /* Timeline */
+        .timeline-section {
+            margin-top: 2rem;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--accent2), var(--accent));
+            border-radius: 1px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .timeline-dot {
+            position: absolute;
+            left: -2rem;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent2);
+            border: 2px solid var(--bg);
+            margin-left: -6px;
+        }
+
+        .timeline-period {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent2);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 4px;
+        }
+
+        .timeline-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 1rem 1.25rem;
+        }
+
+        .timeline-content h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .timeline-content p {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        /* Emergency fund gauge */
+        .gauge-wrap {
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .gauge-svg {
+            overflow: visible;
+        }
+
+        .gauge-label {
+            font-family: var(--font-head);
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .gauge-sublabel {
+            font-size: 12px;
+            fill: var(--muted);
+        }
+
+        /* ── LOADING ── */
+        .loading-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            gap: 1rem;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--surface2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .loading-dots span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--muted);
+            margin: 0 2px;
+            animation: dotBounce 1.2s infinite;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes dotBounce {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5
+            }
+
+            40% {
+                transform: scale(1.4);
+                opacity: 1
+            }
+        }
+
+        /* ── TOAST ── */
+        #toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 9998;
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: var(--r);
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            max-width: 320px;
+        }
+
+        #toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* ── XP POPUP ── */
+        .xp-popup {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            z-index: 9997;
+            font-family: var(--font-head);
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--gold);
+            pointer-events: none;
+            animation: xpFloat 1.5s ease-out forwards;
+        }
+
+        @keyframes xpFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-60px);
+            }
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 640px) {
+            .quiz-header {
+                padding: 1rem;
+            }
+
+            .quiz-body {
+                padding: 1rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .feature-row {
+                grid-template-columns: 1fr;
+            }
+
+            #nav {
+                padding: 1rem;
+            }
+
+            .nav-tabs {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div id="toast"></div>
+
+    <div id="app">
+
+        <!-- ════════════════ NAV ════════════════ -->
+        <nav id="nav" style="display:none">
+            <div class="nav-logo">✦ Finwise</div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="switchTab('quiz')" id="tab-quiz">🎯 Quiz</button>
+                <button class="nav-tab" onclick="switchTab('planner')" id="tab-planner">📊 Planner</button>
+            </div>
+            <div class="xp-badge">
+                <span class="xp-star">★</span>
+                <span id="xp-display">0</span> XP
+            </div>
+        </nav>
+
+        <!-- ════════════════ WELCOME ════════════════ -->
+        <div id="screen-welcome" class="screen active">
+            <div class="center-wrap" style="text-align:center; padding: 3rem 1rem;">
+                <div class="hero-tag">✦ Finwi$e</div>
+                <h1>Finwi$e<br /><span>Gamefying your Grind</span></h1>
+                <p class="hero-sub">Real-world financial scenarios tailored to your life stage. Learn through quizzes,
+                    flashcards, and personalised strategies.</p>
+
+                <div style="max-width:320px; width:100%">
+                    <div class="age-input-wrap">
+                        <input type="number" id="age-input" min="13" max="90" placeholder="Enter your age"
+                            oninput="updateStagePills(this.value)" onkeydown="if(event.key==='Enter') beginJourney()" />
+                    </div>
+                    <div class="stage-pills" id="stage-pills">
+                        <div class="stage-pill" data-min="13" data-max="17">🧑 Teen</div>
+                        <div class="stage-pill" data-min="18" data-max="24">🎓 Early 20s</div>
+                        <div class="stage-pill" data-min="25" data-max="34">🏠 30s</div>
+                        <div class="stage-pill" data-min="35" data-max="49">📈 40s</div>
+                        <div class="stage-pill" data-min="50" data-max="64">🧭 50s</div>
+                        <div class="stage-pill" data-min="65" data-max="90">🌅 60s+</div>
+                    </div>
+                    <button class="btn btn-primary"
+                        style="width:100%; justify-content:center; font-size:1rem; padding:16px;"
+                        onclick="beginJourney()" id="start-btn">
+                        Start My Journey →
+                    </button>
+                    <p style="font-size:12px; color:var(--muted); margin-top:0.75rem;" id="age-err"></p>
+                </div>
+
+                <div class="feature-row">
+                    <div class="feature-card">
+                        <div class="feature-icon">🃏</div>
+                        <h3 style="font-size:13px; margin-bottom:4px;">Flashcards</h3>
+                        <p>Instant feedback with real-world context</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🎮</div>
+                        <h3 style="font-size:13px; margin-bottom:4px;">Gamified</h3>
+                        <p>XP, streaks, badges & a live score</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3 style="font-size:13px; margin-bottom:4px;">Planner</h3>
+                        <p>Personalised financial strategies</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════ QUIZ ════════════════ -->
+        <div id="screen-quiz" class="screen">
+            <div id="quiz-loading" class="loading-screen">
+                <div class="spinner"></div>
+                <div class="loading-text">Crafting your personalised quiz<span
+                        class="loading-dots"><span></span><span></span><span></span></span></div>
+                <p style="font-size:13px; color:var(--muted); max-width:280px; text-align:center;">Generating
+                    age-realistic scenarios just for you</p>
+            </div>
+            <div id="quiz-content" style="display:none; flex-direction:column; flex:1;">
+                <div class="quiz-header">
+                    <div class="stage-chip" id="q-stage-chip">🎯 Quiz</div>
+                    <div class="quiz-meta">
+                        <div class="streak-badge" id="streak-badge" style="display:none">🔥 <span
+                                id="streak-count">0</span> streak</div>
+                        <div class="score-live">✓ <span id="live-score">0</span>/<span id="live-total">5</span></div>
+                    </div>
+                </div>
+                <div class="progress-track" style="margin-top:1px;">
+                    <div class="progress-fill" id="q-progress" style="width:0%"></div>
+                </div>
+                <div class="quiz-body">
+                    <div class="card q-card" id="q-card">
+                        <div class="q-num-label" id="q-num-label">Question 1 of 5</div>
+                        <div class="q-text" id="q-text">Loading...</div>
+                        <div class="choices-grid" id="choices-grid"></div>
+                        <div id="flashcard-area"></div>
+                        <div class="quiz-next-row" id="next-row" style="display:none;">
+                            <div class="combo-indicator" id="combo-msg"></div>
+                            <button class="btn btn-primary" id="next-btn" onclick="nextQuestion()">Next Question
+                                →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════ RESULTS ════════════════ -->
+        <div id="screen-results" class="screen">
+            <div class="center-wrap">
+                <div class="results-wrap">
+                    <h2 style="text-align:center; margin-bottom:0.3rem">Quiz Complete! 🎉</h2>
+                    <p style="text-align:center; color:var(--muted); margin-bottom:2rem;" id="results-stage-label"></p>
+
+                    <div class="score-ring-wrap">
+                        <svg viewBox="0 0 160 160" width="160" height="160">
+                            <circle class="score-ring-bg" cx="80" cy="80" r="66" />
+                            <circle class="score-ring-fill" id="score-ring" cx="80" cy="80" r="66"
+                                stroke-dasharray="414.7" stroke-dashoffset="414.7" />
+                        </svg>
+                        <div class="score-center">
+                            <div class="score-number" id="results-score-num">0</div>
+                            <div class="score-denom" id="results-score-denom">/ 5</div>
+                        </div>
+                    </div>
+
+                    <p style="text-align:center; color:var(--muted); margin-bottom:1rem;" id="results-message"></p>
+
+                    <div class="badges-row" id="results-badges"></div>
+
+                    <div class="q-review-list" id="q-review-list"></div>
+
+                    <div style="display:flex; gap:12px; justify-content:center; margin-top:2rem; flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="retryQuiz()">Try Again</button>
+                        <button class="btn btn-secondary" onclick="switchTab('planner')">Open Planner →</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════ PLANNER ════════════════ -->
+        <div id="screen-planner" class="screen" style="display:none;">
+            <div class="planner-layout">
+                <div class="planner-hero">
+                    <div class="label" style="margin-bottom:8px;">💡 Financial Planner</div>
+                    <h2>Your Personal Money Roadmap</h2>
+                    <p>Fill in your financial snapshot and get a detailed, interactive strategy tailored to your
+                        situation.</p>
+                </div>
+
+                <div class="card" style="margin-bottom:2rem;">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Monthly Income ($)</label>
+                            <input class="form-input" type="number" id="p-income" placeholder="e.g. 5500" min="0" />
+                        </div>
+                        <div class="form-group">
+                            <label>Monthly Expenses ($)</label>
+                            <input class="form-input" type="number" id="p-expenses" placeholder="e.g. 3800" min="0" />
+                        </div>
+                        <div class="form-group">
+                            <label>Current Savings ($)</label>
+                            <input class="form-input" type="number" id="p-savings" placeholder="e.g. 8000" min="0" />
+                        </div>
+                        <div class="form-group">
+                            <label>Total Loan Amount ($)</label>
+                            <input class="form-input" type="number" id="p-loans" placeholder="e.g. 12000" min="0" />
+                        </div>
+                        <div class="form-group">
+                            <label>Credit Score (optional)</label>
+                            <input class="form-input" type="number" id="p-credit" placeholder="300–850" min="300"
+                                max="850" />
+                        </div>
+                        <div class="form-group">
+                            <label>Number of Active Loans</label>
+                            <input class="form-input" type="number" id="p-num-loans" placeholder="e.g. 2" min="0" />
+                        </div>
+                        <div class="form-group full">
+                            <label>Your Financial Goals</label>
+                            <textarea class="form-input" id="p-goals"
+                                placeholder="e.g. Buy a house in 3 years, pay off student loan, build $50k emergency fund..."></textarea>
+                        </div>
+                    </div>
+                    <div style="margin-top:1.5rem; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="runPlanner()" id="plan-btn">Generate My Plan ✦</button>
+                        <p style="font-size:13px; color:var(--muted);" id="plan-err"></p>
+                    </div>
+                </div>
+
+                <!-- Planner Results -->
+                <div id="plan-results" style="display:none;">
+
+                    <!-- Health Score -->
+                    <div class="health-meter">
+                        <div class="label" style="margin-bottom:8px;">Financial Health Score</div>
+                        <div class="health-score-big" id="plan-score">–</div>
+                        <div class="health-bar-track">
+                            <div class="health-bar-fill" id="plan-bar" style="width:0%"></div>
+                        </div>
+                        <p style="color:var(--muted); font-size:14px;" id="plan-score-label"></p>
+                        <div class="badges-row" id="plan-badges" style="margin-top:1rem;"></div>
+                    </div>
+
+                    <!-- Key Stats -->
+                    <div class="stats-grid">
+                        <div class="stat-card" id="stat-surplus">
+                            <div class="stat-value" id="sv-surplus">–</div>
+                            <div class="stat-label">Monthly Surplus</div>
+                        </div>
+                        <div class="stat-card" id="stat-ef">
+                            <div class="stat-value" id="sv-ef">–</div>
+                            <div class="stat-label">Emergency Fund Months</div>
+                        </div>
+                        <div class="stat-card" id="stat-debt">
+                            <div class="stat-value" id="sv-debt">–</div>
+                            <div class="stat-label">Debt-to-Income Ratio</div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Fund Gauge -->
+                    <div class="card" style="margin-bottom:1.5rem;">
+                        <h3 style="margin-bottom:0.25rem;">🛡️ Emergency Fund Status</h3>
+                        <p id="ef-advice" style="color:var(--muted); font-size:14px; margin-bottom:1.25rem;"></p>
+                        <div class="gauge-wrap">
+                            <svg class="gauge-svg" viewBox="0 0 260 150" width="260" height="150">
+                                <path d="M 20 130 A 110 110 0 0 1 240 130" fill="none" stroke="#1a1a26"
+                                    stroke-width="18" stroke-linecap="round" />
+                                <path d="M 20 130 A 110 110 0 0 1 240 130" fill="none" stroke="url(#gaugeGrad)"
+                                    stroke-width="18" stroke-linecap="round" stroke-dasharray="345.6" id="gauge-fill"
+                                    stroke-dashoffset="345.6" />
+                                <defs>
+                                    <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#f87171" />
+                                        <stop offset="50%" stop-color="#fbbf24" />
+                                        <stop offset="100%" stop-color="#4ade80" />
+                                    </linearGradient>
+                                </defs>
+                                <text x="130" y="120" text-anchor="middle" class="gauge-label" fill="#f0eee8"
+                                    font-family="Syne,sans-serif" font-weight="800" font-size="28"
+                                    id="gauge-text">0</text>
+                                <text x="130" y="142" text-anchor="middle" class="gauge-sublabel" fill="#8884a0"
+                                    font-family="Instrument Sans,sans-serif" font-size="12" id="gauge-sub">months</text>
+                                <text x="20" y="148" text-anchor="middle" fill="#8884a0"
+                                    font-family="Instrument Sans,sans-serif" font-size="10">0</text>
+                                <text x="240" y="148" text-anchor="middle" fill="#8884a0"
+                                    font-family="Instrument Sans,sans-serif" font-size="10">6+</text>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Strategies -->
+                    <h3 style="margin-bottom:1rem;">📋 Your Action Plan</h3>
+                    <div class="strategy-list" id="strategy-list"></div>
+
+                    <!-- Timeline -->
+                    <div class="timeline-section">
+                        <h3 style="margin-bottom:1rem; margin-top:2rem;">🗓️ 12-Month Roadmap</h3>
+                        <div class="timeline" id="plan-timeline"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- #app -->
+
+    <script>
+        // ═══════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════
+        let userAge = 0;
+        let sessionId = null;
+        let questions = [];
+        let currentQ = 0;
+        let score = 0;
+        let streak = 0;
+        let maxStreak = 0;
+        let xp = 0;
+        let answered = false;
+        let quizHistory = [];
+        let usedQuestionTexts = new Set();
+
+        // ═══════════════════════════════════════════
+        // LIFE STAGE
+        // ═══════════════════════════════════════════
+        const STAGES = [
+            [13, 17, "Teen (under 18)", "first jobs, pocket money budgeting, saving for goals, understanding bank accounts"],
+            [18, 24, "Early 20s", "student loans, first salary, renting, HECS debt, building an emergency fund, superannuation basics"],
+            [25, 34, "Late 20s & 30s", "career growth, buying a first home, investing in ETFs, starting a family, income protection"],
+            [35, 49, "40s", "wealth building, children's education funds, reviewing super, mortgage strategy, insurance planning"],
+            [50, 64, "50s–early 60s", "pre-retirement planning, salary sacrifice, downsizing, aged care considerations, estate planning"],
+            [65, 90, "Retirement", "drawing down super, aged care, Centrelink pension, estate planning, fixed income investing"],
+        ];
+
+        function getLifeStage(age) {
+            return STAGES.find(([min, max]) => age >= min && age <= max) || STAGES[2];
+        }
+
+        function updateStagePills(val) {
+            const age = parseInt(val);
+            document.querySelectorAll('.stage-pill').forEach(p => {
+                const min = parseInt(p.dataset.min), max = parseInt(p.dataset.max);
+                p.classList.toggle('active', !isNaN(age) && age >= min && age <= max);
+            });
+            document.getElementById('age-err').textContent = '';
+        }
+
+        // ═══════════════════════════════════════════
+        // NAV / TABS
+        // ═══════════════════════════════════════════
+        function switchTab(tab) {
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+
+            if (tab === 'quiz') {
+                if (questions.length > 0 && currentQ < questions.length) showScreen('screen-quiz');
+                else if (questions.length > 0) showScreen('screen-results');
+                else showScreen('screen-welcome');
+            } else {
+                showScreen('screen-planner');
+                document.getElementById('screen-planner').style.display = 'flex';
+            }
+        }
+
+        function showScreen(id) {
+            ['screen-welcome', 'screen-quiz', 'screen-results', 'screen-planner'].forEach(s => {
+                const el = document.getElementById(s);
+                el.classList.remove('active');
+                el.style.display = 'none';
+            });
+            const target = document.getElementById(id);
+            target.style.display = 'flex';
+            target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // ═══════════════════════════════════════════
+        // XP & TOAST
+        // ═══════════════════════════════════════════
+        function addXP(amount) {
+            xp += amount;
+            document.getElementById('xp-display').textContent = xp;
+            const popup = document.createElement('div');
+            popup.className = 'xp-popup';
+            popup.textContent = '+' + amount + ' XP';
+            document.body.appendChild(popup);
+            setTimeout(() => popup.remove(), 1600);
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2800);
+        }
+
+        // ═══════════════════════════════════════════
+        // BEGIN JOURNEY
+        // ═══════════════════════════════════════════
+        async function beginJourney() {
+            const val = parseInt(document.getElementById('age-input').value);
+            const err = document.getElementById('age-err');
+            if (!val || val < 13 || val > 90) {
+                err.textContent = '⚠ Please enter an age between 13 and 90.';
+                return;
+            }
+            userAge = val;
+            document.getElementById('nav').style.display = 'flex';
+            showScreen('screen-quiz');
+            document.getElementById('quiz-loading').style.display = 'flex';
+            document.getElementById('quiz-content').style.display = 'none';
+            await loadQuestions();
+        }
+
+        // ═══════════════════════════════════════════
+        // LOAD QUESTIONS FROM GEMINI
+        // ═══════════════════════════════════════════
+        async function loadQuestions() {
+            const [, , stage, desc] = getLifeStage(userAge);
+            const avoidList = usedQuestionTexts.size > 0
+                ? `\nIMPORTANT: Do NOT repeat or closely resemble any of these already-used topics: ${[...usedQuestionTexts].join('; ')}`
+                : '';
+
+            const prompt = `You are a financial literacy quiz engine for a ${userAge}-year-old Australian. Life stage: "${stage}" (${desc}).${avoidList}
+
+Generate exactly 5 completely different, non-repeating multiple-choice questions about realistic financial decisions for this exact age and life situation.
+
+Each question must cover a DIFFERENT topic (e.g. budgeting, super, tax, debt, investing, insurance, property, emergency funds, salary negotiation, etc.)
+
+Rules:
+- Questions must feel like real dilemmas this person would face RIGHT NOW
+- 4 choices each (A–D), only 1 correct
+- Include a real-world explanation (2-3 sentences), a pro tip, and a 1-sentence "real world connection" showing where this knowledge applies in everyday life
+
+Respond ONLY with valid JSON, no markdown fences:
+{"questions":[{"question":"...","choices":["A. ...","B. ...","C. ...","D. ..."],"correct_index":0,"explanation":"...","tip":"...","real_world":"...","topic":"..."}]}`;
+
+            try {
+                const res = await fetch('/api/quiz/raw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ age: userAge, stage, desc, avoid: [...usedQuestionTexts], prompt })
+                });
+
+                // Fallback: call Gemini via backend or use embedded demo questions
+                let data;
+                if (res.ok) {
+                    data = await res.json();
+                    questions = data.questions;
+                } else {
+                    questions = getDemoQuestions(userAge);
+                }
+            } catch {
+                questions = getDemoQuestions(userAge);
+            }
+
+            questions.forEach(q => usedQuestionTexts.add(q.topic || q.question.slice(0, 40)));
+            currentQ = 0; score = 0; streak = 0; answered = false; quizHistory = [];
+            document.getElementById('live-total').textContent = questions.length;
+            document.getElementById('q-stage-chip').textContent = '🎯 ' + getLifeStage(userAge)[2];
+            document.getElementById('quiz-loading').style.display = 'none';
+            document.getElementById('quiz-content').style.display = 'flex';
+            renderQuestion();
+        }
+
+        // ═══════════════════════════════════════════
+        // DEMO QUESTIONS (age-adaptive fallback)
+        // ═══════════════════════════════════════════
+        function getDemoQuestions(age) {
+            const [, , stage] = getLifeStage(age);
+            const banks = [
+                {
+                    question: age < 25
+                        ? "You just got your first pay cheque of $3,200. After rent and food, you have $800 left. What's the smartest first move?"
+                        : age < 40
+                            ? "You receive a $5,000 end-of-year bonus. You have $2,000 in credit card debt at 19% interest. What should you do first?"
+                            : "You're 45 and reviewing your superannuation. Your balance is $120,000. The recommended balance for your age is $200,000. What's the best strategy?",
+                    choices: age < 25
+                        ? ["A. Spend it — you deserve a treat after working hard", "B. Put it all into a high-yield savings account immediately", "C. Split it: 50% savings, 30% invest, 20% fun", "D. Lend it to a friend who needs it more"]
+                        : age < 40
+                            ? ["A. Invest the entire bonus in crypto for fast returns", "B. Pay off the credit card debt first, then save the rest", "C. Keep the cash in your transaction account", "D. Buy new furniture to improve your home office"]
+                            : ["A. Ignore it — super takes care of itself", "B. Switch to a higher-growth investment option and increase contributions", "C. Withdraw super early to invest in property", "D. Close the account and open a new one with a different fund"],
+                    correct_index: age < 25 ? 2 : 1,
+                    explanation: age < 25
+                        ? "The 50/30/20 rule adapted here gives you progress on savings and investments while rewarding yourself sustainably. Putting everything in savings is safer but misses compound investment growth early on."
+                        : age < 40
+                            ? "High-interest debt (19%) costs more than almost any investment can earn. Eliminating it first is mathematically optimal and reduces financial stress."
+                            : "At 45, increasing your super contributions and switching to growth assets gives your balance ~20 more years to compound. Early withdrawal attracts heavy tax penalties.",
+                    tip: age < 25
+                        ? "Pro tip: Automate your savings split the day after payday so it happens before you can spend it."
+                        : age < 40
+                            ? "Pro tip: After clearing the card, redirect that monthly payment into an index fund."
+                            : "Pro tip: Even an extra $100/month in salary sacrifice can add $40,000+ to your super by retirement.",
+                    real_world: "This exact scenario plays out for millions of Australians every payday.",
+                    topic: "budgeting basics"
+                },
+                {
+                    question: age < 25
+                        ? "Your employer mentions 'superannuation' during onboarding. You're 20. Why does it matter NOW?"
+                        : age < 40
+                            ? "You want to buy your first home. A bank offers you a loan at 80% LVR (Loan-to-Value Ratio). What does this mean?"
+                            : "You're 50 and your financial advisor mentions 'salary sacrificing into super'. What is the key benefit?",
+                    choices: age < 25
+                        ? ["A. It's a mandatory tax — ignore it", "B. Small contributions now compound massively over 45 years", "C. You can access it at age 40 if needed", "D. It's only important once you earn over $100k"]
+                        : age < 40
+                            ? ["A. The bank pays 80% of your deposit", "B. You need a 20% deposit; the bank lends the remaining 80%", "C. You will pay 80% of the home's value in interest", "D. You need to earn 80% of the property value annually"]
+                            : ["A. You avoid income tax on contributions up to $27,500/year", "B. Your employer must match your contributions dollar-for-dollar", "C. You can access the extra funds at any time", "D. It reduces your super fees permanently"],
+                    correct_index: age < 25 ? 1 : age < 40 ? 1 : 0,
+                    explanation: age < 25
+                        ? "$1 invested at 20 is worth ~$21 at retirement (at 7% growth). Starting now — even with small amounts — is the single most powerful financial move a young person can make."
+                        : age < 40
+                            ? "LVR (Loan-to-Value Ratio) is the loan amount as a percentage of the property value. At 80% LVR, you need a 20% deposit. Below 80%, you typically avoid paying Lenders Mortgage Insurance (LMI)."
+                            : "Salary sacrifice reduces your taxable income. Contributions to super are taxed at 15% instead of your marginal rate (potentially 32–47%). This is one of the most tax-effective strategies available.",
+                    tip: age < 25
+                        ? "Pro tip: Even $50 extra per month into super from age 20 could add $150,000+ by age 65."
+                        : age < 40
+                            ? "Pro tip: Saving for a 20% deposit avoids LMI, which can cost $10,000–$30,000 on a typical mortgage."
+                            : "Pro tip: The concessional contributions cap is $27,500/year including your employer's 11% — plan accordingly.",
+                    real_world: age < 25
+                        ? "Millions of young workers ignore super — those who start early retire with hundreds of thousands more."
+                        : age < 40
+                            ? "Understanding LVR is the difference between paying LMI and saving tens of thousands on your first home."
+                            : "High-income earners in Australia can save tens of thousands in tax annually via salary sacrifice.",
+                    topic: age < 25 ? "superannuation basics" : age < 40 ? "home loan LVR" : "salary sacrifice"
+                },
+                {
+                    question: age < 25
+                        ? "You're building your first budget. Which approach is most recommended for beginners?"
+                        : age < 40
+                            ? "Your emergency fund currently covers 1 month of expenses. Financial advisors recommend how many months?"
+                            : "Your adult children ask for $20,000 to help with a house deposit. You have the savings. What's the most prudent response?",
+                    choices: age < 25
+                        ? ["A. Track every cent in a spreadsheet daily", "B. Spend freely and see what's left", "C. Use the 50/30/20 rule: 50% needs, 30% wants, 20% savings", "D. Save everything and spend nothing on fun"]
+                        : age < 40
+                            ? ["A. 1 month — one month is enough", "B. 3–6 months of essential expenses", "C. 12 months minimum", "D. Emergency funds aren't necessary if you have credit cards"]
+                            : ["A. Gift the full $20,000 immediately — family comes first", "B. Decline completely — it's not your responsibility", "C. Discuss a formal loan with clear terms, or consider a smaller gift", "D. Withdraw from super to help them"],
+                    correct_index: age < 25 ? 2 : age < 40 ? 1 : 2,
+                    explanation: age < 25
+                        ? "The 50/30/20 framework (popularised by Senator Elizabeth Warren) gives structure without being restrictive. It ensures you're covering needs, enjoying life, and building wealth simultaneously."
+                        : age < 40
+                            ? "3–6 months of essential expenses provides a buffer for job loss, medical emergencies, or unexpected repairs without resorting to high-interest debt. 1 month is too fragile; 12 months is often too conservative."
+                            : "Gifting large sums without clear terms often creates family tension. A documented loan (even informal) or a partial gift preserves relationships and your retirement security.",
+                    tip: age < 25
+                        ? "Pro tip: Use a budgeting app like YNAB or Pocketbook to automate the 50/30/20 split."
+                        : age < 40
+                            ? "Pro tip: Keep your emergency fund in a high-yield savings account separate from your main account."
+                            : "Pro tip: Consider the 'Bank of Mum and Dad' rules: document everything to protect both parties.",
+                    real_world: age < 25
+                        ? "The 50/30/20 rule is used by millions worldwide as the simplest path to financial stability."
+                        : age < 40
+                            ? "The #1 reason people go into debt is lack of an emergency fund — not overspending."
+                            : "Family financial assistance is one of the most common causes of relationship breakdown in Australia.",
+                    topic: age < 25 ? "budgeting rules" : age < 40 ? "emergency fund" : "family lending"
+                },
+                {
+                    question: age < 25
+                        ? "You're offered a credit card with a $3,000 limit. You pay the minimum each month. What's the real cost?"
+                        : age < 40
+                            ? "You're comparing two home loans: Loan A has 5.8% p.a. fixed for 3 years; Loan B has 5.4% variable. Which is riskier?"
+                            : "At 55, you're considering accessing your super early under 'preservation age' rules. When can you legally do this?",
+                    choices: age < 25
+                        ? ["A. Just the interest shown on the statement", "B. Nothing extra — minimum payments are designed to clear the debt", "C. Years of compounding interest — a $1,000 purchase could cost $2,000+ over time", "D. A small annual fee only"]
+                        : age < 40
+                            ? ["A. Loan A — fixed rates can't change", "B. Loan B — variable rates can rise sharply if the RBA increases rates", "C. Both are equally risky", "D. Neither — both are government-guaranteed"]
+                            : ["A. Any time after age 50", "B. At age 55 (transitioning to retirement — TTR)", "C. Only at age 65", "D. Only if you have less than $100,000 in super"],
+                    correct_index: age < 25 ? 2 : age < 40 ? 1 : 1,
+                    explanation: age < 25
+                        ? "Credit card minimum payments are designed to maximise interest paid. A $3,000 balance at 20% interest with minimum payments can take 10+ years to repay and cost over $3,000 in interest alone."
+                        : age < 40
+                            ? "Variable rate loans move with the RBA cash rate. In 2022–23, Australian variable rates rose ~4% in 12 months, adding hundreds of dollars to monthly repayments. Fixed rates give certainty but less flexibility."
+                            : "In Australia, the preservation age is 55–60 depending on birth year. A Transition to Retirement (TTR) strategy allows you to access super as a pension supplement while still working.",
+                    tip: age < 25
+                        ? "Pro tip: Always pay your credit card balance in full each month — it's a free 30-day loan if used correctly."
+                        : age < 40
+                            ? "Pro tip: Consider splitting your loan — part fixed, part variable — to hedge against rate movements."
+                            : "Pro tip: A TTR strategy used between 55 and 60 can significantly reduce tax while building super.",
+                    real_world: age < 25
+                        ? "Credit card debt is the most expensive common debt in Australia — averaging 20% interest vs 6% for home loans."
+                        : age < 40
+                            ? "The RBA rate rises of 2022–23 increased average Australian mortgage repayments by over $1,200/month."
+                            : "Transition to Retirement is one of the most underutilised strategies for Australians in their late 50s.",
+                    topic: age < 25 ? "credit card interest" : age < 40 ? "fixed vs variable mortgage" : "superannuation access"
+                },
+                {
+                    question: age < 25
+                        ? "You get a $2,000 tax refund. You have no debt. What's the most wealth-building use of this money?"
+                        : age < 40
+                            ? "Your employer offers salary packaging (salary sacrifice). Which of these is usually a tax-effective benefit to package?"
+                            : "You're 60 and weighing up whether to downsize your family home. What's the main financial benefit?",
+                    choices: age < 25
+                        ? ["A. Buy the latest smartphone and gaming console", "B. Hold it in a savings account earning 0.1%", "C. Invest in a diversified ETF (e.g. ASX 200 or global index fund)", "D. Give it to your parents for safekeeping"]
+                        : age < 40
+                            ? ["A. Luxury travel", "B. Superannuation contributions (up to $27,500 concessional cap)", "C. Personal clothing allowance", "D. Gym membership at a premium club"]
+                            : ["A. You can buy a luxury apartment instead", "B. Unlock equity to boost super contributions under the downsizer contribution rules ($300k each)", "C. Avoid all capital gains tax permanently", "D. Qualify immediately for the full Age Pension"],
+                    correct_index: age < 25 ? 2 : age < 40 ? 1 : 1,
+                    explanation: age < 25
+                        ? "A diversified ETF gives you exposure to hundreds of companies with a single investment. The ASX 200 has historically returned ~10% p.a. over long periods. Starting at 20 with $2,000 gives it 45 years to compound."
+                        : age < 40
+                            ? "Super salary sacrifice is taxed at 15% instead of your marginal rate. This is the single most universally applicable tax-effective salary packaging benefit for most Australian workers."
+                            : "The Australian government allows individuals aged 55+ to contribute up to $300,000 (each, $600k per couple) from a home sale into super — outside the normal contribution caps. This is a powerful wealth-building tool.",
+                    tip: age < 25
+                        ? "Pro tip: Apps like Raiz or Stake make investing small amounts in ETFs easy with no minimum balance."
+                        : age < 40
+                            ? "Pro tip: Salary sacrifice also reduces your HELP (HECS) repayment obligations if you're paying off a student loan."
+                            : "Pro tip: The downsizer contribution can significantly boost your super balance tax-free in the final years before retirement.",
+                    real_world: age < 25
+                        ? "$2,000 invested in an ASX 200 ETF at age 20 becomes ~$47,000 by age 65 at historical returns — without adding another cent."
+                        : age < 40
+                            ? "A person earning $90,000 can save ~$2,400/year in tax by salary sacrificing $10,000 into super."
+                            : "Thousands of Australian retirees use the downsizer contribution to turbocharge their retirement savings in their 60s.",
+                    topic: age < 25 ? "investing basics" : age < 40 ? "salary packaging" : "downsizer super contribution"
+                }
+            ];
+            return banks;
+        }
+
+        // ═══════════════════════════════════════════
+        // RENDER QUESTION
+        // ═══════════════════════════════════════════
+        function renderQuestion() {
+            answered = false;
+            const q = questions[currentQ];
+            const total = questions.length;
+            const pct = (currentQ / total) * 100;
+
+            document.getElementById('q-progress').style.width = pct + '%';
+            document.getElementById('q-num-label').textContent = `Question ${currentQ + 1} of ${total}`;
+            document.getElementById('q-text').textContent = q.question;
+            document.getElementById('live-score').textContent = score;
+            document.getElementById('flashcard-area').innerHTML = '';
+            document.getElementById('next-row').style.display = 'none';
+
+            const streak = window._streak || 0;
+            const sb = document.getElementById('streak-badge');
+            if (streak >= 2) { sb.style.display = 'flex'; document.getElementById('streak-count').textContent = streak; }
+            else sb.style.display = 'none';
+
+            const grid = document.getElementById('choices-grid');
+            grid.innerHTML = '';
+            const letters = ['A', 'B', 'C', 'D'];
+            q.choices.forEach((text, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.innerHTML = `<span class="choice-letter">${letters[i]}</span><span>${text.replace(/^[A-D]\.\s*/, '')}</span>`;
+                btn.onclick = () => handleAnswer(i);
+                grid.appendChild(btn);
+            });
+
+            // Animate question in
+            const card = document.getElementById('q-card');
+            card.style.opacity = '0'; card.style.transform = 'translateY(10px)';
+            requestAnimationFrame(() => {
+                card.style.transition = 'opacity 0.3s, transform 0.3s';
+                card.style.opacity = '1'; card.style.transform = 'translateY(0)';
+            });
+        }
+
+        // ═══════════════════════════════════════════
+        // HANDLE ANSWER
+        // ═══════════════════════════════════════════
+        function handleAnswer(chosen) {
+            if (answered) return;
+            answered = true;
+            const q = questions[currentQ];
+            const isCorrect = chosen === q.correct_index;
+
+            if (isCorrect) { score++; window._streak = (window._streak || 0) + 1; }
+            else window._streak = 0;
+            if ((window._streak || 0) > maxStreak) maxStreak = window._streak || 0;
+
+            const btns = document.querySelectorAll('.choice-btn');
+            btns.forEach((b, i) => {
+                b.disabled = true;
+                if (i === q.correct_index) b.classList.add(isCorrect ? 'correct' : 'reveal-correct');
+                else if (i === chosen && !isCorrect) b.classList.add('wrong');
+            });
+
+            // XP
+            const xpEarned = isCorrect ? (window._streak >= 3 ? 30 : 20) : 5;
+            addXP(xpEarned);
+
+            // Build flashcard
+            const fc = document.createElement('div');
+            fc.className = 'flashcard-wrap';
+            fc.innerHTML = buildFlashcard(q, isCorrect, xpEarned);
+            document.getElementById('flashcard-area').appendChild(fc);
+
+            // Track history
+            quizHistory.push({ q, chosen, isCorrect });
+
+            // Combo message
+            const combo = window._streak || 0;
+            const comboEl = document.getElementById('combo-msg');
+            comboEl.textContent = combo >= 3 ? `🔥 ${combo}x Combo!` : combo === 2 ? '⚡ 2 in a row!' : '';
+
+            const isLast = currentQ === questions.length - 1;
+            document.getElementById('next-btn').textContent = isLast ? 'See Results →' : 'Next Question →';
+            document.getElementById('next-row').style.display = 'flex';
+
+            if (isCorrect) showToast(combo >= 3 ? `🔥 ${combo}-streak! Amazing!` : '✅ Correct! Well done!');
+            else showToast('💡 Not quite — check the explanation below');
+        }
+
+        function buildFlashcard(q, isCorrect, xpEarned) {
+            const icon = isCorrect ? '✅' : '❌';
+            const verdict = isCorrect ? 'Correct!' : 'Not quite';
+            const cardClass = isCorrect ? 'correct-card' : 'wrong-card';
+            const verdictClass = isCorrect ? 'correct' : 'wrong';
+            return `
+  <div class="flashcard ${cardClass}">
+    <div class="fc-top">
+      <div class="fc-verdict-icon">${icon}</div>
+      <div class="fc-verdict-text ${verdictClass}">${verdict}</div>
+      <div class="fc-points">+${xpEarned} XP</div>
+    </div>
+    <div class="fc-body">
+      <div class="fc-section">
+        <div class="fc-section-label">📖 Explanation</div>
+        <div class="fc-section-text">${q.explanation}</div>
+      </div>
+      <div class="fc-tip-box">
+        <span class="fc-tip-icon">💡</span>
+        <div class="fc-tip-text">${q.tip}</div>
+      </div>
+      ${q.real_world ? `<div class="fc-realworld"><div class="fc-realworld-text"><strong>🌍 Real World:</strong> ${q.real_world}</div></div>` : ''}
+    </div>
+  </div>`;
+        }
+
+        // ═══════════════════════════════════════════
+        // NEXT QUESTION
+        // ═══════════════════════════════════════════
+        function nextQuestion() {
+            currentQ++;
+            if (currentQ >= questions.length) showResults();
+            else renderQuestion();
+        }
+
+        // ═══════════════════════════════════════════
+        // RESULTS
+        // ═══════════════════════════════════════════
+        function showResults() {
+            document.getElementById('q-progress').style.width = '100%';
+            showScreen('screen-results');
+
+            const total = questions.length;
+            const pct = score / total;
+            const circumference = 2 * Math.PI * 66;
+
+            document.getElementById('results-score-num').textContent = score;
+            document.getElementById('results-score-denom').textContent = '/ ' + total;
+            document.getElementById('results-stage-label').textContent = getLifeStage(userAge)[2];
+
+            // Animate ring
+            const ring = document.getElementById('score-ring');
+            const color = pct >= 0.8 ? '#4ade80' : pct >= 0.6 ? '#fbbf24' : '#f87171';
+            ring.style.stroke = color;
+            setTimeout(() => {
+                ring.style.strokeDashoffset = circumference * (1 - pct);
+            }, 100);
+
+            // Message
+            const msgs = [
+                [1.0, "🏆 Perfect score! You're a financial mastermind."],
+                [0.8, "🌟 Excellent! You clearly understand money at this life stage."],
+                [0.6, "👍 Solid effort! A few gaps to close — review the flashcards."],
+                [0.4, "📚 Keep learning — financial literacy is a lifelong skill."],
+                [0, "🌱 Great start! Every expert was once a beginner."],
+            ];
+            document.getElementById('results-message').textContent = msgs.find(([t]) => pct >= t)[1];
+
+            // Badges
+            const badges = [];
+            if (score === total) badges.push(['🥇 Perfect Score', 'badge-gold']);
+            if (maxStreak >= 3) badges.push([`🔥 ${maxStreak}-Streak`, 'badge-gold']);
+            if (score >= Math.ceil(total * 0.8)) badges.push(['⭐ High Achiever', 'badge-purple']);
+            if (xp >= 100) badges.push([`✦ ${xp} XP`, 'badge-green']);
+            badges.push(['🎓 Quiz Graduate', 'badge-purple']);
+
+            const badgesEl = document.getElementById('results-badges');
+            badgesEl.innerHTML = '';
+            badges.forEach(([label, cls], i) => {
+                const b = document.createElement('div');
+                b.className = `badge-chip ${cls}`;
+                b.textContent = label;
+                b.style.animationDelay = (i * 0.1) + 's';
+                badgesEl.appendChild(b);
+            });
+
+            // Review
+            const reviewEl = document.getElementById('q-review-list');
+            reviewEl.innerHTML = '';
+            quizHistory.forEach(({ q, isCorrect }, i) => {
+                const div = document.createElement('div');
+                div.className = 'q-review-item';
+                div.innerHTML = `<div class="q-review-icon">${isCorrect ? '✅' : '❌'}</div>
+      <div class="q-review-text"><strong>Q${i + 1}: ${q.question.slice(0, 80)}${q.question.length > 80 ? '…' : ''}</strong>${isCorrect ? 'Correct' : 'Incorrect — ' + q.choices[q.correct_index].replace(/^[A-D]\.\s*/, '')}</div>`;
+                reviewEl.appendChild(div);
+            });
+        }
+
+        function retryQuiz() {
+            questions = []; currentQ = 0; score = 0; streak = 0; window._streak = 0; answered = false;
+            showScreen('screen-quiz');
+            document.getElementById('quiz-loading').style.display = 'flex';
+            document.getElementById('quiz-content').style.display = 'none';
+            loadQuestions();
+        }
+
+        // ═══════════════════════════════════════════
+        // PLANNER
+        // ═══════════════════════════════════════════
+        async function runPlanner() {
+            const income = parseFloat(document.getElementById('p-income').value);
+            const expenses = parseFloat(document.getElementById('p-expenses').value);
+            const savings = parseFloat(document.getElementById('p-savings').value);
+            const loans = parseFloat(document.getElementById('p-loans').value) || 0;
+            const credit = parseInt(document.getElementById('p-credit').value) || null;
+            const numLoans = parseInt(document.getElementById('p-num-loans').value) || 0;
+            const goals = document.getElementById('p-goals').value.trim();
+            const errEl = document.getElementById('plan-err');
+
+            if (!income || income <= 0) { errEl.textContent = '⚠ Please enter a valid monthly income.'; return; }
+            if (isNaN(expenses) || expenses < 0) { errEl.textContent = '⚠ Please enter valid monthly expenses.'; return; }
+            if (isNaN(savings) || savings < 0) { errEl.textContent = '⚠ Please enter valid savings amount.'; return; }
+            errEl.textContent = '';
+
+            document.getElementById('plan-btn').disabled = true;
+            document.getElementById('plan-btn').textContent = 'Generating…';
+
+            try {
+                const res = await fetch('/api/planner/plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ monthly_income: income, monthly_expenses: expenses, current_savings: savings, loan_amount: loans, number_of_loans: numLoans, credit_score: credit, financial_goals: goals })
+                });
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                renderPlanResults(data, income, expenses, savings, loans);
+            } catch {
+                renderPlanResults(generateLocalPlan(income, expenses, savings, loans, credit, goals), income, expenses, savings, loans);
+            } finally {
+                document.getElementById('plan-btn').disabled = false;
+                document.getElementById('plan-btn').textContent = 'Regenerate Plan ✦';
+            }
+        }
+
+        // ── Local plan generator (fallback) ──
+        function generateLocalPlan(income, expenses, savings, loans, credit, goals) {
+            const surplus = income - expenses;
+            const efMonths = expenses > 0 ? savings / expenses : 0;
+            const strategies = [];
+            const badges = [];
+            let score = 50;
+
+            if (efMonths < 1) {
+                score -= 20;
+                strategies.push({ title: "🚨 Build Emergency Fund Fast", description: "With less than 1 month of expenses saved, you're one unexpected event away from debt. This is your #1 priority.", priority: "high", icon: "🛡️", color: "red", action_items: ["Open a separate high-yield savings account today (ING, Ubank or similar at 5%+)", "Set up automatic transfer of at least 20% of your income on payday", `Target: $${(expenses * 3).toLocaleString()} (3 months) within 6 months`] });
+            } else if (efMonths < 3) {
+                score -= 10;
+                strategies.push({ title: "📈 Grow Emergency Fund to 3 Months", description: "You have a start, but 3 months is the minimum safety net. Keep building.", priority: "high", icon: "🛡️", color: "gold", action_items: [`Current: ${efMonths.toFixed(1)} months — target ${(expenses * 3).toLocaleString()}`, "Automate $" + Math.round(surplus * 0.4) + "/month into high-yield savings", "Avoid dipping into savings for non-emergencies"] });
+            } else if (efMonths >= 6) {
+                score += 20;
+                badges.push("Emergency Ready 🛡️");
+                strategies.push({ title: "✅ Emergency Fund is Solid", description: "You have 6+ months covered. Redirect surplus cash to investments now.", priority: "low", icon: "✅", color: "green", action_items: ["Open a brokerage account (e.g. CommSec Pocket, Stake)", "Invest in a diversified ETF (e.g. VAS + VGS split)", "Consider maximising super contributions"] });
+            } else {
+                score += 10;
+                badges.push("Saver ⭐");
+            }
+
+            if (loans > 0) {
+                score -= Math.min(20, Math.round((loans / income) * 2));
+                strategies.push({ title: "💳 Accelerate Debt Elimination", description: `Your $${loans.toLocaleString()} in loans is costing you interest every month. Eliminating it frees up cash flow for wealth building.`, priority: "high", icon: "💳", color: "red", action_items: ["List all debts with their interest rates", "Pay minimum on all, attack highest-rate first (Avalanche method)", `Redirecting $${Math.round(surplus * 0.3)}/month extra to debt saves $${Math.round(loans * 0.08).toLocaleString()} in interest over 2 years`] });
+            } else {
+                score += 15;
+                badges.push("Debt Free 🏅");
+            }
+
+            if (surplus > income * 0.3) {
+                score += 15;
+                badges.push("High Saver 💰");
+                strategies.push({ title: "🚀 Invest Your Surplus", description: `Your surplus of $${surplus.toFixed(0)}/month is exceptional. At this rate, you should be putting serious money to work.`, priority: "medium", icon: "📈", color: "green", action_items: [`Invest $${Math.round(surplus * 0.5)}/month in global index ETFs (e.g. IWLD, NDQ, VGS)`, "Maximise super salary sacrifice to reduce tax", "Review if a 100-point ID check to open a micro-investing account is done"] });
+            } else if (surplus < income * 0.1) {
+                score -= 15;
+                strategies.push({ title: "✂️ Cut Costs or Boost Income", description: "Your expenses are eating most of your income. Even small changes compound over time.", priority: "high", icon: "✂️", color: "red", action_items: ["Audit all subscriptions (streaming, apps, gym) — cancel unused", "Negotiate phone and internet plans (call retention teams)", "Explore a side income: freelancing, selling, tutoring, gig work"] });
+            }
+
+            if (credit && credit < 600) {
+                score -= 10;
+                strategies.push({ title: "🔧 Repair Credit Score", description: `A credit score of ${credit} limits your access to good loan rates. Improving it takes time but is straightforward.`, priority: "medium", icon: "🔧", color: "purple", action_items: ["Pay all bills on time — this is 35% of your score", "Don't apply for new credit for 6+ months", "Check your credit report for errors at creditsavvy.com.au (free)"] });
+            }
+
+            if (goals) {
+                strategies.push({ title: "🎯 Goal-Aligned Strategy", description: `Based on your goal: "${goals.slice(0, 60)}…"`, priority: "medium", icon: "🎯", color: "purple", action_items: ["Break your goal into monthly savings targets", "Open a dedicated account named after your goal", `At $${Math.round(surplus * 0.3)}/month saved, you'll have $${Math.round(surplus * 0.3 * 24).toLocaleString()} in 24 months`] });
+            }
+
+            score = Math.max(0, Math.min(100, score));
+            if (score >= 75) badges.push("Financially Fit 💪");
+
+            const efAdvice = efMonths < 3
+                ? `⚠️ Your emergency fund covers only ${efMonths.toFixed(1)} months. This leaves you vulnerable. The target is 3–6 months ($${(expenses * 3).toLocaleString()}–$${(expenses * 6).toLocaleString()}).`
+                : efMonths < 6
+                    ? `👍 You have ${efMonths.toFixed(1)} months covered. Push to 6 months for full security.`
+                    : `✅ Excellent — ${efMonths.toFixed(1)} months of expenses saved. You're protected against most financial shocks.`;
+
+            return { score, badges, profile_summary: `Monthly surplus: $${surplus.toFixed(0)}. Savings ratio: ${((surplus / income) * 100).toFixed(0)}%.`, strategies, emergency_fund_advice: efAdvice };
+        }
+
+        function renderPlanResults(data, income, expenses, savings, loans) {
+            document.getElementById('plan-results').style.display = 'block';
+            document.getElementById('plan-results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            // Score
+            document.getElementById('plan-score').textContent = data.score;
+            const s = data.score;
+            const scoreColor = s >= 75 ? '#4ade80' : s >= 50 ? '#fbbf24' : '#f87171';
+            document.getElementById('plan-score').style.color = scoreColor;
+            setTimeout(() => { document.getElementById('plan-bar').style.width = s + '%'; }, 100);
+            const labels = [[75, '💪 Financially Fit — you\'re on the right track!'], [50, '📊 Developing — some areas need attention.'], [0, '⚠️ Needs Work — take the priority actions below.']];
+            document.getElementById('plan-score-label').textContent = labels.find(([t]) => s >= t)[1];
+
+            // Badges
+            const badgesEl = document.getElementById('plan-badges');
+            badgesEl.innerHTML = '';
+            (data.badges || []).forEach((b, i) => {
+                const el = document.createElement('div');
+                el.className = 'badge-chip badge-gold';
+                el.textContent = b;
+                el.style.animationDelay = (i * 0.1) + 's';
+                badgesEl.appendChild(el);
+            });
+
+            // Stats
+            const surplus = income - expenses;
+            const efMonths = expenses > 0 ? savings / expenses : 0;
+            const dti = income > 0 ? (loans / income) * 100 : 0;
+
+            document.getElementById('sv-surplus').textContent = '$' + Math.round(surplus).toLocaleString();
+            document.getElementById('stat-surplus').className = 'stat-card ' + (surplus >= 0 ? 'positive' : 'negative');
+            document.getElementById('sv-ef').textContent = efMonths.toFixed(1) + ' mo';
+            document.getElementById('stat-ef').className = 'stat-card ' + (efMonths >= 3 ? 'positive' : 'negative');
+            document.getElementById('sv-debt').textContent = dti.toFixed(0) + '%';
+            document.getElementById('stat-debt').className = 'stat-card ' + (dti < 20 ? 'positive' : dti < 40 ? 'neutral' : 'negative');
+
+            // Gauge
+            const gaugeMax = 8;
+            const gaugeAngle = Math.min(efMonths / gaugeMax, 1);
+            const totalArc = 345.6;
+            document.getElementById('ef-advice').textContent = data.emergency_fund_advice;
+            setTimeout(() => {
+                document.getElementById('gauge-fill').style.strokeDashoffset = totalArc * (1 - gaugeAngle);
+                document.getElementById('gauge-text').textContent = efMonths.toFixed(1);
+            }, 200);
+
+            // Strategies
+            const sl = document.getElementById('strategy-list');
+            sl.innerHTML = '';
+            const colors = { red: 'red', green: 'green', gold: 'gold', purple: 'purple', blue: 'blue' };
+            const icons = { red: '🔴', green: '✅', gold: '⭐', purple: '🔷', blue: '📘' };
+            const priorities = { high: 'priority-high', medium: 'priority-medium', low: 'priority-low' };
+
+            (data.strategies || []).forEach((s, i) => {
+                const color = s.color || 'purple';
+                const priority = s.priority || 'medium';
+                const div = document.createElement('div');
+                div.className = 'strategy-card';
+                div.innerHTML = `
+      <div class="strategy-header" onclick="toggleStrategy(this.parentElement)">
+        <div class="strategy-icon ${colors[color] || 'purple'}">${s.icon || icons[color] || '📋'}</div>
+        <div class="strategy-title">${s.title}</div>
+        <div class="strategy-priority ${priorities[priority] || 'priority-medium'}">${priority}</div>
+        <div class="strategy-chevron">▼</div>
+      </div>
+      <div class="strategy-body">
+        <div class="strategy-desc">${s.description}</div>
+        <div class="action-items">${(s.action_items || []).map((a, j) => `<div class="action-item"><div class="action-num">${j + 1}</div><div class="action-text">${a}</div></div>`).join('')}</div>
+      </div>`;
+                if (i === 0) { div.classList.add('expanded'); }
+                sl.appendChild(div);
+            });
+
+            // Timeline
+            const tl = document.getElementById('plan-timeline');
+            tl.innerHTML = '';
+            const timeline = buildTimeline(income, expenses, savings, loans);
+            timeline.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'timeline-item';
+                div.innerHTML = `<div class="timeline-dot"></div><div class="timeline-period">${item.period}</div><div class="timeline-content"><h4>${item.title}</h4><p>${item.desc}</p></div>`;
+                tl.appendChild(div);
+            });
+
+            addXP(30);
+            showToast('📊 Your financial plan is ready!');
+        }
+
+        function buildTimeline(income, expenses, savings, loans) {
+            const surplus = income - expenses;
+            const efTarget = expenses * 3;
+            const monthsToEF = surplus > 0 ? Math.max(0, Math.ceil((efTarget - savings) / (surplus * 0.5))) : '∞';
+            const items = [];
+            items.push({ period: 'Month 1–2', title: '🚀 Quick Wins', desc: 'Cancel unused subscriptions, open a high-yield savings account, set up automatic transfers on payday.' });
+            if (loans > 0) items.push({ period: 'Month 1–6', title: '💳 Debt Attack', desc: `Target your highest-interest debt first. With $${Math.round(surplus * 0.3).toLocaleString()}/month extra, you could clear significant debt in 6–12 months.` });
+            items.push({ period: `Month ${typeof monthsToEF === 'number' ? monthsToEF : '?'}`, title: '🛡️ Emergency Fund Reached', desc: `Hit your $${efTarget.toLocaleString()} (3-month) target. You're now protected against most financial shocks.` });
+            items.push({ period: 'Month 6–12', title: '📈 Start Investing', desc: `Open a brokerage account and begin investing $${Math.round(surplus * 0.3).toLocaleString()}/month in diversified ETFs. Let compound growth begin.` });
+            items.push({ period: 'Month 12+', title: '🏆 Review & Scale', desc: 'Review your plan, increase contributions as income grows, and set your next 12-month targets.' });
+            return items;
+        }
+
+        function toggleStrategy(card) {
+            card.classList.toggle('expanded');
+        }
+
+        // ═══════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════
+        document.addEventListener('DOMContentLoaded', () => {
+            // Show planner screen properly when tab clicked
+            document.getElementById('screen-planner').style.display = 'none';
+        });
+    </script>
+</body>
+
+</html>
